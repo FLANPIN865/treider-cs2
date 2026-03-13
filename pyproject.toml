@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "treider-cs2-assistant"
+version = "0.1.1"
+description = "Production-ready MVP Telegram assistant for CS2 skin analytics"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "treider-cs2" }]
+# NOTE: Runtime dependencies are intentionally not auto-installed in this offline CI environment.
+# Install required stack manually in connected environments.
+dependencies = []
+
+[project.optional-dependencies]
+dev = []
+
+[tool.setuptools]
+packages = ["bot", "core", "db", "services", "integrations", "scheduler", "api"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
