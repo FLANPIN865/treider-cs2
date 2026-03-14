@@ -1,5 +1,7 @@
 """Risk decision engine."""
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 
 from services.schemas import CandidateSignal, RiskDecision
@@ -17,6 +19,8 @@ class RiskEngine:
         daily_budget_used: float,
         item_last_signal_at: datetime | None,
         primary_source_available: bool,
+        action_expires_at: datetime | None = None,
+        approvals_today: int = 0,
     ) -> RiskDecision:
         reasons: list[str] = []
 
@@ -55,6 +59,13 @@ class RiskEngine:
             reasons.append("data_incomplete")
         if candidate.price_confidence < settings["min_price_confidence"]:
             reasons.append("low_price_confidence")
+
+        if action_expires_at and action_expires_at < datetime.now(timezone.utc):
+            reasons.append("action_expired")
+        if candidate.buy_price > settings.get("per_item_budget", settings["max_item_price"]):
+            reasons.append("per_item_budget_exceeded")
+        if approvals_today >= settings.get("max_approvals_per_day", 999_999):
+            reasons.append("too_many_approvals_today")
 
         score = round(candidate.net_profit_pct * 0.5 + candidate.liquidity_score * 30 + candidate.price_confidence * 20, 2)
         return RiskDecision(

@@ -1,5 +1,7 @@
 """Configuration module."""
 
+from __future__ import annotations
+
 from functools import lru_cache
 
 from pydantic import Field
@@ -35,6 +37,11 @@ class Settings(BaseSettings):
     allowed_fallback_sources: str = "generic_fallback"
     stale_price_threshold_minutes: int = 45
     min_price_confidence: float = 0.55
+    approval_required: bool = True
+    auto_execute_after_approval: bool = False
+    allow_confirmed_execution: bool = False
+    per_item_budget: float = 150.0
+    max_approvals_per_day: int = 20
 
     cs_market_base_url: str = ""
     cs_market_api_key: str = ""
@@ -44,7 +51,6 @@ class Settings(BaseSettings):
 
     @property
     def owner_ids(self) -> set[int]:
-        """Parse owner IDs from environment string."""
         if not self.telegram_owner_ids.strip():
             return set()
         return {int(part.strip()) for part in self.telegram_owner_ids.split(",") if part.strip()}

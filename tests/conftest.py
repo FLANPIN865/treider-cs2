@@ -1,1 +1,1 @@
-"""No shared fixtures required for offline static tests."""
+"""Offline static tests for repository structure."""

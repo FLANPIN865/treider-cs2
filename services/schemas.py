@@ -1,5 +1,7 @@
 """Pydantic schemas used across service layer."""
 
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -28,3 +30,18 @@ class RiskDecision(BaseModel):
     reasons: list[str]
     score: float
     fallback_source_used: bool
+
+
+class ExecutionResult(BaseModel):
+    adapter_name: str
+    success: bool
+    status: str
+    message: str
+    manual_steps: list[str] = []
+    external_url: str | None = None
+
+
+class ApprovalInput(BaseModel):
+    actor_telegram_id: int
+    action_id: int | None = None
+    comment: str = ""

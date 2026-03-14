@@ -33,6 +33,9 @@ async def scan_job() -> None:
             "stale_price_threshold_minutes": settings.stale_price_threshold_minutes,
             "enable_fallback_sources": settings.enable_fallback_sources,
             "min_price_confidence": settings.min_price_confidence,
+            "primary_market_source": settings.primary_market_source,
+            "per_item_budget": settings.per_item_budget,
+            "max_approvals_per_day": settings.max_approvals_per_day,
         }
         await scanner.run(session, risk_settings)
 

@@ -1,68 +1,62 @@
-# CS2 Trading Assistant (MVP)
+# CS2 Trading Assistant (Safe Semi-Auto MVP)
 
-Безопасный Telegram-ассистент для анализа CS2 скинов и поиска торговых возможностей.
+Telegram-бот для полуавтоматического трейдинга CS2-скинами: бот ищет и готовит сделки, но не исполняет опасные действия без явного approve владельца.
 
-## Что делает MVP
+## Safety first
+Проект **не** делает:
+- обход Steam Guard / trade hold / подтверждений
+- автоподтверждение мобильных трейдов
+- headless/browser automation для скрытого управления аккаунтом
+- несанкционированный scraping
+- выдуманные private API
+- silent execution без approve
 
-> ⚠️ Для офлайн-CI в этом репозитории отключена автоустановка зависимостей в `pip install -e .[dev]`.
-> Для реального запуска установите стек вручную: `aiogram`, `fastapi`, `sqlalchemy`, `alembic`, `psycopg`, `pydantic-settings`, `httpx`, `loguru`, `apscheduler`.
-
-- собирает рыночные данные через `MarketDataProvider`
-- `cs_market` задан как primary source of truth
-- использует fallback-источник только при недоступности primary (если включено)
-- считает спред/комиссии/ожидаемую прибыль
-- применяет risk engine и блокирует небезопасные сигналы
-- хранит инвентарь/позиции/сделки/сигналы/аудит
-- показывает прогресс к цели `Butterfly Knife`
-- предоставляет FastAPI health/ready/metrics endpoints
-
-## Архитектура
-- `bot/` — Telegram handlers, keyboards, formatters
-- `core/` — config, logging, constants
+## Architecture
+- `bot/` — Telegram handlers, inline approve/reject flow
+- `core/` — config/constants/logging
 - `db/` — SQLAlchemy models, session, repositories
-- `services/` — risk engine, routing, scoring, progress
-- `integrations/` — адаптеры источников цен
-- `scheduler/` — APScheduler market scan jobs
-- `api/` — FastAPI
-- `migrations/` — Alembic
+- `services/` — source routing, risk, scoring, pending actions, progress
+- `integrations/` — market providers + execution adapters
+- `scheduler/` — market scans and pending action creation
+- `api/` — FastAPI health/ready/metrics
 - `tests/` — pytest
-- `scripts/` — seed data
+- `migrations/` — Alembic
 
-## Telegram команды
-`/start /help /status /health /settings /balance /inventory /positions /deals /signals /risk /whitelist /blacklist /additem /removeitem /setprofit /setbudget /setmaxitem /scan /top /watchlist /pause /resume /logs /progress`
+## Primary source policy
+`cs_market` — primary source of truth.
+Fallback используется только при включении `ENABLE_FALLBACK_SOURCES=true`.
+Если primary недоступен и fallback выключен — сигнал/действие отклоняется.
 
-Inline-кнопки:
-- Запустить скан
-- Остановить скан
-- Топ сигналов
-- Инвентарь
-- Риск
-- Настройки
-- Watchlist
-- Последние сделки
-- Прогресс до цели
+## Approval workflow
+1. Scanner находит кандидат.
+2. Risk engine валидирует.
+3. Создаётся `PendingAction`.
+4. Бот отправляет карточку с кнопками Approve/Reject/Snooze/Blacklist.
+5. После Approve:
+   - если есть разрешённый execution adapter и он включён — выполняется
+   - иначе перевод в `manual_required` + manual execution card
 
-## Важные ограничения безопасности
-- нет обхода trade hold
-- нет автоподтверждения трейдов
-- нет browser automation для Steam
-- нет скрытой автоматизации аккаунта
-- нет выдуманных private API endpoint-ов
+По умолчанию:
+- `APPROVAL_REQUIRED=true`
+- `AUTO_EXECUTE_AFTER_APPROVAL=false`
+- `execution_mode=manual_only`
 
-## Настройка окружения
-1. Скопируйте `.env.example` → `.env`
-2. Укажите `TELEGRAM_TOKEN`, `TELEGRAM_OWNER_IDS`, `DATABASE_URL`
-3. При наличии публичного API CS Market укажите `CS_MARKET_BASE_URL` и `CS_MARKET_API_KEY`
+## Telegram commands
+`/start /help /status /health /settings /balance /inventory /positions /deals /signals /risk /whitelist /blacklist /additem /removeitem /setprofit /setbudget /setmaxitem /scan /top /watchlist /pause /resume /logs /progress /pending /approve /reject /approve_last /reject_last`
 
-## Локальный запуск
+## Environment
+См. `.env.example`.
+Секреты только через env.
+
+## Run local
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .[dev]
+pip install -e .[dev] --no-build-isolation
 make run
 ```
 
-Запуск Telegram-бота:
+Bot:
 ```bash
 python -m bot.run_bot
 ```
@@ -73,29 +67,17 @@ make up
 make down
 ```
 
-## Миграции
-```bash
-make migrate
-```
+## API
+- `GET /health`
+- `GET /ready`
+- `GET /metrics-summary`
 
-## Seed
-```bash
-python scripts/seed_data.py
-```
+## MVP limitations
+- `CsMarketProvider` — безопасный адаптер-интерфейс, нужен подтверждённый публичный API contract.
+- `ConfirmedExecutionAdapter` — заглушка; выключен по умолчанию.
 
-## Пример сценария
-1. Добавить предметы в watchlist (seed already includes defaults).
-2. Запустить скан `/scan`.
-3. Просмотреть `/signals` и `/top`.
-4. Проверить прогресс `/progress` до Butterfly Knife.
-
-## MVP ограничения
-- `CsMarketProvider` содержит TODO для реального подтверждённого API-контракта.
-- Уведомления Telegram о сигналах в текущем MVP представлены как готовая логика форматирования + job orchestration.
-
-## TODO v2
-- полноценный stateful Telegram settings wizard
-- idempotent Alembic migrations for all tables
-- Prometheus metrics
-- richer anti-spam and RBAC
-- webhook mode for Telegram bot
+## TODO
+- полноценный settings wizard в Telegram
+- детальный approval comments UX
+- алерты только на улучшившиеся кандидаты
+- полные alembic migrations для всех таблиц
