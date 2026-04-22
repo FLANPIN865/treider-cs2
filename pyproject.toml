@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "treider-cs2-assistant"
+version = "0.2.0"
+description = "Production-ready MVP Telegram assistant for safe semi-automatic CS2 trading"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "treider-cs2" }]
+dependencies = [
+  "aiogram>=3.5,<4",
+  "fastapi>=0.110,<1",
+  "uvicorn[standard]>=0.29,<1",
+  "sqlalchemy>=2.0,<3",
+  "alembic>=1.13,<2",
+  "psycopg[binary]>=3.1,<4",
+  "pydantic>=2.6,<3",
+  "pydantic-settings>=2.2,<3",
+  "httpx>=0.27,<1",
+  "loguru>=0.7,<1",
+  "apscheduler>=3.10,<4",
+  "python-dotenv>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.1,<9",
+  "pytest-asyncio>=0.23,<1",
+  "ruff>=0.3,<1",
+  "black>=24.3,<25",
+]
+
+[tool.setuptools]
+packages = ["bot", "core", "db", "services", "integrations", "scheduler", "api"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
